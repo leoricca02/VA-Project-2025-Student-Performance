@@ -94,7 +94,7 @@ npm (comes with Node.js)
 
 
 
-1. **Clone the repository:**
+1\. **Clone the repository:**
 
 
 
