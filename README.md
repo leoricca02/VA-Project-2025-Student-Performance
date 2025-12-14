@@ -182,7 +182,7 @@ npm (comes with Node.js)
 
 
 
-###### **Setup**
+##### **Setup**
 
 
 
@@ -262,7 +262,7 @@ http://localhost:9000
 
 
 
-###### **Technologies**
+##### **Technologies**
 
 
 
@@ -302,7 +302,7 @@ Sass/SCSS: For styling.
 
 
 
-###### **Authors**
+##### **Authors**
 
 
 
