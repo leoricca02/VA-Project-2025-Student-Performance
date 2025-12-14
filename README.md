@@ -2,7 +2,15 @@
 
 
 
+
+
+
+
 ## Visual Analytics Course - Fall 2025 Sapienza University of Rome
+
+
+
+
 
 
 
@@ -10,7 +18,15 @@
 
 
 
+
+
+
+
 This project is a web-based Visual Analytics Dashboard designed to analyze the factors influencing student academic performance in secondary education. Using the UCI Student Performance Data Set, the tool helps school counselors and educational policymakers identify "at-risk" students by visually correlating their grades with social, demographic, and behavioral factors.
+
+
+
+
 
 
 
@@ -18,7 +34,15 @@ The system features coordinated multiple views (Brushing \& Linking), mandatory 
 
 
 
+
+
+
+
 ##### **Features**
+
+
+
+
 
 
 
@@ -26,7 +50,15 @@ The system features coordinated multiple views (Brushing \& Linking), mandatory 
 
 
 
+
+
+
+
 Parallel Coordinates (Multidimensional Profile): Visualizes complex student profiles across variables like Age, Study Time, Alcohol Consumption, and Health. Allows range filtering (Brushing) on axes.
+
+
+
+
 
 
 
@@ -34,7 +66,15 @@ Scatter Plot (Performance Analysis): Maps Final Grade (G3) against Absences, ins
 
 
 
+
+
+
+
 PCA Projection (Cluster Analysis): A 2D projection of the 33-dimensional dataset using Principal Component Analysis, revealing clusters of students with similar behaviors.
+
+
+
+
 
 
 
@@ -42,7 +82,15 @@ Context Bar Charts: Categorical filters for social factors like Internet Access,
 
 
 
+
+
+
+
 ###### **2. Advanced Interaction**
+
+
+
+
 
 
 
@@ -50,7 +98,15 @@ Brushing \& Linking: Selections in one chart (e.g., filtering for high alcohol c
 
 
 
+
+
+
+
 On-Demand Analytics: A dynamic statistics panel calculates and compares the Average Grade and Absences of the selected subset versus the global population in real-time.
+
+
+
+
 
 
 
@@ -58,7 +114,15 @@ On-Demand Analytics: A dynamic statistics panel calculates and compares the Aver
 
 
 
+
+
+
+
 The project uses the Student Performance Data Set (Math course) from the UCI Machine Learning Repository.
+
+
+
+
 
 
 
@@ -66,7 +130,15 @@ The project uses the Student Performance Data Set (Math course) from the UCI Mac
 
 
 
+
+
+
+
 **Dimensions**: ~395 Instances (Students) x 33 Attributes.
+
+
+
+
 
 
 
@@ -74,7 +146,15 @@ The project uses the Student Performance Data Set (Math course) from the UCI Mac
 
 
 
+
+
+
+
 ##### **Installation \& Usage**
+
+
+
+
 
 
 
@@ -82,7 +162,15 @@ The project uses the Student Performance Data Set (Math course) from the UCI Mac
 
 
 
+
+
+
+
 Node.js (Version 14+ recommended)
+
+
+
+
 
 
 
@@ -90,11 +178,23 @@ npm (comes with Node.js)
 
 
 
-###### **Setup**
 
 
 
-1. **Clone the repository:**
+
+##### **Setup**
+
+
+
+
+
+
+
+1\. **Clone the repository:**
+
+
+
+
 
 
 
@@ -104,7 +204,17 @@ git clone https://github.com/leoricca02/VA-Project-2025-Student-Performance.git
 
 
 
+
+
+
+
+
+
 2\. **Install dependencies:**
+
+
+
+
 
 
 
@@ -114,7 +224,17 @@ npm install
 
 
 
+
+
+
+
+
+
 3\. **Run the development server:**
+
+
+
+
 
 
 
@@ -124,9 +244,21 @@ npm run start
 
 
 
+
+
+
+
+
+
 4\. **Open your browser at:**
 
+
+
 http://localhost:9000
+
+
+
+
 
 
 
@@ -134,7 +266,15 @@ http://localhost:9000
 
 
 
+
+
+
+
 D3.js (v7): For all data visualizations and DOM manipulation.
+
+
+
+
 
 
 
@@ -142,7 +282,15 @@ PCA-js: For computing Principal Component Analysis.
 
 
 
+
+
+
+
 Webpack: For bundling and development server.
+
+
+
+
 
 
 
@@ -150,7 +298,15 @@ Sass/SCSS: For styling.
 
 
 
+
+
+
+
 ##### **Authors**
+
+
+
+
 
 
 
@@ -158,9 +314,16 @@ Sass/SCSS: For styling.
 
 
 
+
+
+
+
 **Federico Turrini - ID: 2175431**
 
 
 
-Project developed for the Visual Analytics exam, Winter 2026 session.
 
+
+
+
+Project developed for the Visual Analytics exam, Winter 2026 session.
