@@ -136,7 +136,7 @@ window.app = (new class {
       .style('border-top', '1px solid #ddd')
       .style('z-index', '10') // Ensure text sits on top if needed
 
-    // 4. POPULATE TEXT FIRST (Matches Python Scaled Result)
+    // 4. POPULATE TEXT FIRST
     pcaTextDiv.html(`
         <strong>Interpretation (Standardized):</strong><br>
         <span style="color: #333;">PC1 (X-Axis):</span> <em>Academic Performance</em><br>
@@ -147,15 +147,6 @@ window.app = (new class {
 
     // 5. Initialize Chart
     this.pcaChart.initChart(pcaChartDiv.node(), this.data)
-
-    // Re-apply Text (safety)
-    pcaTextDiv.html(`
-        <strong>Interpretation (Standardized):</strong><br>
-        <span style="color: #333;">PC1 (X-Axis):</span> <em>Academic Performance</em><br>
-        Driven by G1, G2, G3 and Failures.<br>
-        <span style="color: #333;">PC2 (Y-Axis):</span> <em>Social/Alcohol Behavior</em><br>
-        Driven by Walc, Dalc, and GoOut.
-    `)
 
     // Stats & UI Controls
     this.updateStats(this.data)
@@ -249,10 +240,12 @@ window.app = (new class {
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Count</div>
                     <div style="font-weight: bold; font-size: 16px;">${selectedCount}</div>
+                    <div style="font-size: 10px; color: #999;">/ ${totalStudents}</div>
                 </div>
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Avg Grade</div>
                     <div style="font-weight: bold; font-size: 16px; color: ${gradeColor};">${selectedAvgGrade.toFixed(1)}</div>
+                    <div style="font-size: 10px; color: #999;">Global: ${globalAvgGrade.toFixed(1)}</div>
                 </div>
             </div>
 
@@ -265,6 +258,10 @@ window.app = (new class {
                     <div style="font-size: 12px; color: #555;">Corr(Abs,G3)</div>
                     <div style="font-weight: bold; font-size: 16px;">${correlation.toFixed(2)}</div>
                 </div>
+            </div>
+            
+            <div style="text-align:center; margin-top:5px; font-size:10px; color:#aaa;">
+                Avg Absences: ${selectedAvgAbsences.toFixed(1)} (Global: ${globalAvgAbsences.toFixed(1)})
             </div>
           </div>
       `
