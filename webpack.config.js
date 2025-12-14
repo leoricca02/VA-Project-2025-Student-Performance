@@ -1,15 +1,30 @@
 const path = require('path')
-const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const HtmlWebpackPlugin = require('html-webpack-plugin')
-const HtmlWebpackHarddiskPlugin = require('html-webpack-harddisk-plugin')
-const meta = require('./package.json')
+const { CleanWebpackPlugin } = require('clean-webpack-plugin')
+const MiniCssExtractPlugin = require('mini-css-extract-plugin')
 
-const config = {
-  entry: { main: './src/index.js' },
-  target: 'web',
+module.exports = {
+  entry: {
+    main: './src/index.js'
+  },
   output: {
     path: path.resolve(__dirname, 'dist'),
-    filename: 'main.js'
+    filename: '[name].js',
+    publicPath: '/'
+  },
+  devtool: 'inline-source-map',
+  devServer: {
+    static: './dist',
+    open: true,
+    hot: true,
+    port: 9000,
+    historyApiFallback: true,
+    client: {
+      overlay: {
+        errors: true,
+        warnings: false // Disables the overlay for warnings
+      },
+    }
   },
   module: {
     rules: [
@@ -17,60 +32,41 @@ const config = {
         test: /\.js$/,
         exclude: /node_modules/,
         use: {
-          loader: 'babel-loader'
+          loader: 'babel-loader',
+          options: {
+            presets: ['@babel/preset-env']
+          }
         }
       },
       {
-        test: /\.(sa|sc|c)ss$/,
+        test: /\.(css|scss)$/,
         use: [
-          'style-loader',
+          MiniCssExtractPlugin.loader,
           'css-loader',
           'postcss-loader',
           'sass-loader'
         ]
       },
       {
-        test: /\.csv$/,
-        use: ['csv-loader'],
+        test: /\.(png|svg|jpg|gif)$/,
+        type: 'asset/resource'
       },
+      {
+        test: /\.(csv|tsv)$/,
+        use: [
+          'csv-loader'
+        ]
+      }
     ]
   },
   plugins: [
     new CleanWebpackPlugin(),
     new HtmlWebpackPlugin({
-      template: path.resolve(__dirname, 'src', 'index.html'),
-      filename: 'index.html',
-      title: meta.name,
-      hash: true,
-      alwaysWriteToDisk: true
+      template: './src/index.html',
+      filename: 'index.html'
+    }),
+    new MiniCssExtractPlugin({
+      filename: '[name].css'
     })
   ]
-}
-
-module.exports = (_, argv) => {
-  if (argv.mode === 'development') {
-    config.devtool = 'eval-source-map'
-    config.devServer = {
-      watchFiles: ['/src'],
-      open: true,
-      historyApiFallback: true,
-      port: 9000
-    }
-    config.plugins.push(new HtmlWebpackHarddiskPlugin({
-      outputPath: path.resolve(__dirname, 'dist')
-    }))
-  }
-  else if (argv.mode === 'production') {
-    config.stats = {
-      colors: false,
-      hash: true,
-      timings: true,
-      assets: true,
-      chunks: true,
-      chunkModules: true,
-      modules: true,
-      children: true
-    }
-  }
-  return config
 }

@@ -15,7 +15,7 @@ export default class PCAChart {
     const container = d3.select(selector)
     const rect = container.node().getBoundingClientRect()
     this.width = rect.width || 300
-    this.height = rect.height || 300
+    this.height = (rect.height || 300) - 30
 
     const innerWidth = this.width - this.margin.left - this.margin.right
     const innerHeight = this.height - this.margin.top - this.margin.bottom
@@ -26,7 +26,7 @@ export default class PCAChart {
       .style('text-align', 'center')
       .style('font-size', '14px')
       .style('margin', '5px 0')
-      .text('PCA Projection (colored by Grade)')
+      .text('PCA Projection (Standardized)')
 
     this.svg = container.append('svg')
       .attr('width', this.width)
@@ -46,19 +46,37 @@ export default class PCAChart {
       .style('opacity', 0)
       .style('font-size', '12px')
 
-    // --- PCA CALCULATION ---
+    // --- PCA CALCULATION (Standardized & Flipped) ---
     const numericKeys = ['age', 'Medu', 'Fedu', 'traveltime', 'studytime', 'failures',
       'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences', 'G1', 'G2', 'G3']
 
-    const rawVectors = data.map(d => numericKeys.map(key => d[key]))
-    const vectors = PCA.getEigenVectors(rawVectors)
-    const adData = PCA.computeAdjustedData(rawVectors, vectors[0], vectors[1])
+    // 1. Calculate Mean and Standard Deviation
+    const stats = numericKeys.map(key => {
+      const values = data.map(d => d[key])
+      return {
+        mean: d3.mean(values),
+        sd: d3.deviation(values) || 1
+      }
+    })
+
+    // 2. Create Scaled Vectors: (Value - Mean) / SD
+    const scaledVectors = data.map(d => {
+      return numericKeys.map((key, i) => {
+        const rawVal = d[key]
+        return (rawVal - stats[i].mean) / stats[i].sd
+      })
+    })
+
+    // 3. Compute PCA
+    const vectors = PCA.getEigenVectors(scaledVectors)
+    const adData = PCA.computeAdjustedData(scaledVectors, vectors[0], vectors[1])
 
     this.pcaData = adData.formattedAdjustedData[0].map((val, i) => ({
       id: data[i].id,
-      x: val,
+      // FLIP AXIS HERE: Multiply by -1 to match Python direction
+      x: val * -1,
       y: adData.formattedAdjustedData[1][i],
-      G3: data[i].G3 // Keep grade for coloring
+      G3: data[i].G3
     }))
 
     // --- SCALES ---
@@ -80,7 +98,7 @@ export default class PCAChart {
       .attr('y', innerHeight + 35)
       .style('text-anchor', 'middle')
       .style('font-size', '10px')
-      .text('PC 1 (Variance explained)')
+      .text('PC 1 (Academic Performance)')
 
     this.svg.append('g')
       .call(d3.axisLeft(this.yScale).ticks(5))
@@ -91,7 +109,7 @@ export default class PCAChart {
       .attr('y', -35)
       .style('text-anchor', 'middle')
       .style('font-size', '10px')
-      .text('PC 2')
+      .text('PC 2 (Social/Lifestyle)')
 
     // --- DRAW POINTS ---
     this.circles = this.svg.selectAll('circle')
@@ -101,7 +119,6 @@ export default class PCAChart {
       .attr('cx', d => this.xScale(d.x))
       .attr('cy', d => this.yScale(d.y))
       .attr('r', 4)
-    // COLOR BY GRADE
       .attr('fill', d => CONST.COLOR_SCALE(d.G3))
       .attr('opacity', 0.8)
       .attr('stroke', '#333')
