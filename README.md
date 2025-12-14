@@ -262,7 +262,7 @@ http://localhost:9000
 
 
 
-##### **Technologies**
+###### **Technologies**
 
 
 
@@ -302,7 +302,7 @@ Sass/SCSS: For styling.
 
 
 
-##### **Authors**
+###### **Authors**
 
 
 
