@@ -112,31 +112,27 @@ window.app = (new class {
     // PCA Chart Setup
     const pcaContainer = d3.select('.pca-plot')
 
-    // 1. Configure Parent Flex Container
     pcaContainer
       .style('display', 'flex')
       .style('flex-direction', 'column')
       .style('height', '100%')
       .style('overflow', 'hidden')
 
-    // 2. Create Chart Container (Flex Grow)
     const pcaChartDiv = pcaContainer.append('div')
       .attr('class', 'pca-chart-container')
-      .style('flex', '1') // Fill remaining space
+      .style('flex', '1')
       .style('width', '100%')
       .style('position', 'relative')
-      .style('overflow', 'hidden') // Clip any internal overflow
+      .style('overflow', 'hidden')
 
-    // 3. Create Text Container (Fixed/Natural Height)
     const pcaTextDiv = pcaContainer.append('div')
       .attr('class', 'pca-text-container')
-      .style('flex-shrink', '0') // Don't shrink
+      .style('flex-shrink', '0')
       .style('padding', '10px')
-      .style('background', '#fafafa') // Ensure background covers any under-draw
+      .style('background', '#fafafa')
       .style('border-top', '1px solid #ddd')
-      .style('z-index', '10') // Ensure text sits on top if needed
+      .style('z-index', '10')
 
-    // 4. POPULATE TEXT FIRST
     pcaTextDiv.html(`
         <strong>Interpretation (Standardized):</strong><br>
         <span style="color: #333;">PC1 (X-Axis):</span> <em>Academic Performance</em><br>
@@ -145,15 +141,12 @@ window.app = (new class {
         Driven by Walc, Dalc, and GoOut.
     `)
 
-    // 5. Initialize Chart
     this.pcaChart.initChart(pcaChartDiv.node(), this.data)
 
-    // Stats & UI Controls
     this.updateStats(this.data)
 
     const leftPanel = d3.select('.left')
 
-    // Reset Button
     leftPanel.append('button')
       .text('↺ Reset All Filters')
       .style('width', '100%')
@@ -166,7 +159,6 @@ window.app = (new class {
       .style('cursor', 'pointer')
       .on('click', () => window.location.reload())
 
-    // Bar Charts Container
     const barContainer = leftPanel.append('div').attr('class', 'bar-charts-container')
 
     const createBar = (attr, label) => {
@@ -186,7 +178,6 @@ window.app = (new class {
     createBar('internet', 'Internet Access')
     createBar('romantic', 'Romantic Relationship')
 
-    // Histogram Container
     const histDiv = leftPanel.append('div').attr('class', 'histogram-box').style('margin-top', '10px')
     this.histogramPlot.initChart(histDiv.node(), this.data)
   }
@@ -225,6 +216,7 @@ window.app = (new class {
     const correlation = calculateCorrelation(filteredData, 'absences', 'G3')
 
     const gradeColor = selectedAvgGrade >= globalAvgGrade ? '#2e7d32' : '#c62828'
+    const absenceColor = selectedAvgAbsences <= globalAvgAbsences ? '#2e7d32' : '#c62828'
     const failColor = failRate > 33 ? '#c62828' : '#2e7d32'
 
     let statsContainer = d3.select('.left .stats-container')
@@ -249,19 +241,24 @@ window.app = (new class {
                 </div>
             </div>
 
-            <div style="display: flex; justify-content: space-between;">
+            <!-- Fix: Promoted Avg Absences to main grid with consistent styling -->
+            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                <div style="text-align: center; flex: 1;">
+                    <div style="font-size: 12px; color: #555;">Avg Absences</div>
+                    <div style="font-weight: bold; font-size: 16px; color: ${absenceColor};">${selectedAvgAbsences.toFixed(1)}</div>
+                    <div style="font-size: 10px; color: #999;">Global: ${globalAvgAbsences.toFixed(1)}</div>
+                </div>
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Fail Rate</div>
                     <div style="font-weight: bold; font-size: 16px; color: ${failColor};">${failRate.toFixed(1)}%</div>
                 </div>
+            </div>
+
+            <div style="display: flex; justify-content: center;">
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Corr(Abs,G3)</div>
                     <div style="font-weight: bold; font-size: 16px;">${correlation.toFixed(2)}</div>
                 </div>
-            </div>
-            
-            <div style="text-align:center; margin-top:5px; font-size:10px; color:#aaa;">
-                Avg Absences: ${selectedAvgAbsences.toFixed(1)} (Global: ${globalAvgAbsences.toFixed(1)})
             </div>
           </div>
       `
