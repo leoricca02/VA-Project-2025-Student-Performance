@@ -25,9 +25,7 @@ export default class BarChart {
 
     const rect = container.node().getBoundingClientRect()
     this.width = rect.width || 200
-    // Fix: Use dynamic height or safer default, avoiding fixed 120 if possible
-    // Ideally, CSS controls container height. Let's try to fit container.
-    this.height = rect.height > 50 ? rect.height : 150
+    this.height = 120
 
     const innerWidth = this.width - this.margin.left - this.margin.right
     const innerHeight = this.height - this.margin.top - this.margin.bottom
@@ -87,6 +85,7 @@ export default class BarChart {
           d3.select(event.currentTarget).attr('stroke', '#333').attr('stroke-width', 2)
         }
       })
+    // Tooltip on Background Bars (Total)
       .on('mouseover', (event, d) => {
         this.tooltip.transition().duration(200).style('opacity', 1)
         this.tooltip.html(`Value: ${d[0]}<br>Total: ${d[1]}`)
@@ -97,7 +96,7 @@ export default class BarChart {
         this.tooltip.transition().duration(200).style('opacity', 0)
       })
 
-    // Foreground Bars
+    // Foreground Bars (Filtered)
     this.foregroundBars = this.svg.selectAll('.bar-fg')
       .data(this.counts)
       .enter().append('rect')
@@ -107,13 +106,27 @@ export default class BarChart {
       .attr('width', this.xScale.bandwidth())
       .attr('height', d => innerHeight - this.yScale(d[1]))
       .attr('fill', CONST.COLOR_PRIMARY)
-      .style('pointer-events', 'none')
+      .style('pointer-events', 'none') // Allow clicks to pass through
+
+    // Labels (New Feature)
+    this.labels = this.svg.selectAll('.bar-label')
+      .data(this.counts)
+      .enter().append('text')
+      .attr('class', 'bar-label')
+      .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
+      .attr('y', d => this.yScale(d[1]) - 5) // Initially above the total bar
+      .attr('text-anchor', 'middle')
+      .style('font-size', '10px')
+      .style('fill', '#333')
+      .style('font-weight', 'bold')
+      .text(d => d[1]) // Initially show total
   }
 
   updateSelection (filteredData) {
     const filteredCountsMap = d3.rollup(filteredData, v => v.length, d => d[this.attribute])
     const innerHeight = this.height - this.margin.top - this.margin.bottom
 
+    // Update Foreground Bars
     this.foregroundBars
       .transition().duration(CONST.TRANSITION_DURATION)
       .attr('y', d => {
@@ -123,6 +136,24 @@ export default class BarChart {
       .attr('height', d => {
         const count = filteredCountsMap.get(d[0]) || 0
         return innerHeight - this.yScale(count)
+      })
+
+    // Update Labels
+    this.labels
+      .transition().duration(CONST.TRANSITION_DURATION)
+      .attr('y', d => {
+        const count = filteredCountsMap.get(d[0]) || 0
+        // Position label slightly above the *filtered* bar height
+        // If count is 0, position at bottom
+        return count > 0 ? this.yScale(count) - 5 : innerHeight - 5
+      })
+      .text(d => {
+        const count = filteredCountsMap.get(d[0]) || 0
+        return count
+      })
+      .style('opacity', d => {
+        const count = filteredCountsMap.get(d[0]) || 0
+        return count > 0 ? 1 : 0 // Hide 0 counts to reduce clutter
       })
   }
 }

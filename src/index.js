@@ -8,6 +8,7 @@ import ParallelPlot from './ParallelPlot'
 import PCAChart from './PCAChart'
 import BarChart from './BarChart'
 import HistogramPlot from './HistogramPlot'
+import BoxPlot from './BoxPlot'
 import { calculateCorrelation } from './utils'
 
 window.app = (new class {
@@ -18,6 +19,8 @@ window.app = (new class {
     this.parallelPlot = new ParallelPlot()
     this.pcaChart = new PCAChart()
     this.histogramPlot = new HistogramPlot()
+    this.ageBoxPlot = new BoxPlot()
+    this.absBoxPlot = new BoxPlot()
     this.barCharts = []
 
     this.categoricalFilters = {}
@@ -93,13 +96,6 @@ window.app = (new class {
     })
 
     this.data = this.data.filter(d => !isNaN(d.G3) && d.school)
-    console.log('2. Data Loaded. Rows:', this.data.length)
-
-    // --- CLEAR UI ---
-    d3.select('.center .top').html('')
-    d3.select('.center .down').html('')
-    d3.select('.pca-plot').html('')
-    d3.select('.left').html('')
 
     // --- INIT CHARTS ---
     this.parallelPlot.initChart('.center .top', this.data, (activeFilters) => {
@@ -109,75 +105,56 @@ window.app = (new class {
 
     this.scatterPlot.initChart('.center .down', this.data)
 
-    // PCA Chart Setup
+    // PCA Chart
     const pcaContainer = d3.select('.pca-plot')
-
-    pcaContainer
-      .style('display', 'flex')
-      .style('flex-direction', 'column')
-      .style('height', '100%')
-      .style('overflow', 'hidden')
-
-    const pcaChartDiv = pcaContainer.append('div')
-      .attr('class', 'pca-chart-container')
-      .style('flex', '1')
-      .style('width', '100%')
-      .style('position', 'relative')
-      .style('overflow', 'hidden')
-
-    const pcaTextDiv = pcaContainer.append('div')
-      .attr('class', 'pca-text-container')
-      .style('flex-shrink', '0')
-      .style('padding', '10px')
-      .style('background', '#fafafa')
-      .style('border-top', '1px solid #ddd')
-      .style('z-index', '10')
+    pcaContainer.style('display', 'flex').style('flex-direction', 'column').style('height', '100%')
+    const pcaChartDiv = pcaContainer.append('div').attr('class', 'pca-chart-container').style('flex', '1').style('width', '100%').style('position', 'relative')
+    const pcaTextDiv = pcaContainer.append('div').attr('class', 'pca-text-container').style('flex-shrink', '0').style('padding', '10px').style('background', '#fafafa').style('border-top', '1px solid #ddd')
 
     pcaTextDiv.html(`
         <strong>Interpretation (Standardized):</strong><br>
-        <span style="color: #333;">PC1 (X-Axis):</span> <em>Academic Performance</em><br>
-        Driven by G1, G2, G3 and Failures.<br>
-        <span style="color: #333;">PC2 (Y-Axis):</span> <em>Social/Alcohol Behavior</em><br>
-        Driven by Walc, Dalc, and GoOut.
+        <span style="color: #333;">PC1 (21.2%):</span> <em>Academic Performance</em><br>
+        Driven by Grades (0.47) and Failures.<br>
+        <span style="color: #333;">PC2 (13.1%):</span> <em>Social/Alcohol</em><br>
+        Driven by Walc (0.52), Dalc (0.50).
     `)
 
     this.pcaChart.initChart(pcaChartDiv.node(), this.data)
 
-    this.updateStats(this.data)
-
+    // Left Panel
     const leftPanel = d3.select('.left')
+    this.updateStats(this.data) // Initial stats
 
+    // Reset Button
     leftPanel.append('button')
       .text('↺ Reset All Filters')
-      .style('width', '100%')
-      .style('padding', '8px')
-      .style('margin', '10px 0')
-      .style('background', '#607d8b')
-      .style('color', 'white')
-      .style('border', 'none')
-      .style('border-radius', '4px')
-      .style('cursor', 'pointer')
+      .style('width', '100%').style('padding', '8px').style('margin', '10px 0').style('background', '#607d8b').style('color', 'white').style('border', 'none').style('cursor', 'pointer')
       .on('click', () => window.location.reload())
 
+    // Bar Charts
     const barContainer = leftPanel.append('div').attr('class', 'bar-charts-container')
-
     const createBar = (attr, label) => {
       const div = barContainer.append('div').attr('class', 'bar-chart-box')
       const chart = new BarChart()
       chart.initChart(div.node(), this.data, attr, label, (attribute, value) => {
-        if (this.categoricalFilters[attribute] === value) {
-          delete this.categoricalFilters[attribute]
-        } else {
-          this.categoricalFilters[attribute] = value
-        }
+        if (this.categoricalFilters[attribute] === value) delete this.categoricalFilters[attribute]
+        else this.categoricalFilters[attribute] = value
         this.applyAllFilters()
       })
       this.barCharts.push(chart)
     }
-
     createBar('internet', 'Internet Access')
     createBar('romantic', 'Romantic Relationship')
 
+    // Box Plots Container
+    const boxContainer = leftPanel.append('div').style('display', 'flex').style('justify-content', 'space-between')
+    const ageDiv = boxContainer.append('div').style('width', '48%')
+    const absDiv = boxContainer.append('div').style('width', '48%')
+
+    this.ageBoxPlot.initChart(ageDiv.node(), this.data, 'age', 'Age Distribution')
+    this.absBoxPlot.initChart(absDiv.node(), this.data, 'absences', 'Absences Distribution')
+
+    // Histogram
     const histDiv = leftPanel.append('div').attr('class', 'histogram-box').style('margin-top', '10px')
     this.histogramPlot.initChart(histDiv.node(), this.data)
   }
@@ -199,6 +176,8 @@ window.app = (new class {
     this.pcaChart.updateSelection(filteredData)
     this.barCharts.forEach(chart => chart.updateSelection(filteredData))
     this.histogramPlot.updateSelection(filteredData)
+    this.ageBoxPlot.updateSelection(filteredData) // Update Box
+    this.absBoxPlot.updateSelection(filteredData) // Update Box
     this.updateStats(filteredData)
   }
 
@@ -227,7 +206,6 @@ window.app = (new class {
     const html = `
           <div style="font-family: sans-serif; padding-bottom: 10px; border-bottom: 2px solid #ddd; margin-bottom: 10px;">
             <h3 style="margin-top:0; text-align:center;">Real-time Analytics</h3>
-            
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Count</div>
@@ -240,8 +218,6 @@ window.app = (new class {
                     <div style="font-size: 10px; color: #999;">Global: ${globalAvgGrade.toFixed(1)}</div>
                 </div>
             </div>
-
-            <!-- Fix: Promoted Avg Absences to main grid with consistent styling -->
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Avg Absences</div>
@@ -253,7 +229,6 @@ window.app = (new class {
                     <div style="font-weight: bold; font-size: 16px; color: ${failColor};">${failRate.toFixed(1)}%</div>
                 </div>
             </div>
-
             <div style="display: flex; justify-content: center;">
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Corr(Abs,G3)</div>
@@ -262,7 +237,6 @@ window.app = (new class {
             </div>
           </div>
       `
-
     statsContainer.html(html)
   }
 }())
