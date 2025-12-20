@@ -1,14 +1,15 @@
 import * as d3 from 'd3'
 
 export default {
-  // Colors
-  COLOR_PRIMARY: '#4caf50',
+  // VISUAL ANALYTICS STANDARD: Use Blue/Orange or Purple/Green for accessibility.
+  COLOR_PRIMARY: '#2196f3', // Blue primary
   COLOR_BG: '#ffffff',
 
   // Color Scale for Grades (0-20)
+  // Diverging scale: Orange (Fail) -> White (Average) -> Blue (Pass/Excellent)
   COLOR_SCALE: d3.scaleLinear()
     .domain([0, 10, 20])
-    .range(['#d32f2f', '#fbc02d', '#388e3c'])
+    .range(['#d6604d', '#f7f7f7', '#2166ac']) // Brewer RdBu scale roughly
     .clamp(true),
 
   // Chart Configurations
@@ -16,14 +17,16 @@ export default {
   TRANSITION_DURATION: 500,
 
   // Parallel Plot Dimensions
-  PARALLEL_DIMENSIONS: ['age', 'studytime', 'failures', 'Dalc', 'Walc', 'health'],
+  // REVISED: Logical flow from Effort (Study) -> Lifestyle (Free/GoOut/Alc) -> Outcome (G3)
+  PARALLEL_DIMENSIONS: ['studytime', 'freetime', 'goout', 'Dalc', 'Walc', 'absences', 'G3'],
   PARALLEL_DIM_LABELS: {
-    age: 'Age (Years)',
-    studytime: 'Weekly Study (1:<2h ... 4:>10h)',
-    failures: 'Past Failures (Count)',
-    Dalc: 'Workday Alc. (1=Low...5=High)',
-    Walc: 'Weekend Alc. (1=Low...5=High)',
-    health: 'Health (1=Bad...5=Good)'
+    studytime: 'Study Time (1-4)',
+    freetime: 'Free Time (1-5)',
+    goout: 'Going Out (1-5)',
+    Dalc: 'Workday Alc. (1-5)',
+    Walc: 'Weekend Alc. (1-5)',
+    absences: 'Absences (n)',
+    G3: 'Final Grade (0-20)'
   },
 
   // Formatters

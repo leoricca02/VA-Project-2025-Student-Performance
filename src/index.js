@@ -9,7 +9,7 @@ import PCAChart from './PCAChart'
 import BarChart from './BarChart'
 import HistogramPlot from './HistogramPlot'
 import BoxPlot from './BoxPlot'
-import { calculateCorrelation } from './utils'
+import CONST from './constants'
 
 window.app = (new class {
   constructor () {
@@ -25,6 +25,9 @@ window.app = (new class {
 
     this.categoricalFilters = {}
     this.rangeFilters = {}
+
+    // State for single student selection
+    this.selectedStudentId = null
   }
 
   run () {
@@ -95,39 +98,62 @@ window.app = (new class {
       }
     })
 
-    this.data = this.data.filter(d => !isNaN(d.G3) && d.school)
+    // --- DATA CLEANING & FILTERING ---
+    const originalCount = this.data.length
+    this.data = this.data.filter(d => {
+      // 1. Basic Validity
+      if (isNaN(d.G3) || !d.school) return false
+
+      // 2. "GHOST" DATA REMOVAL
+      // Remove students with 0 Absences AND 0 Grade.
+      // Rationale: High likelihood of data entry error or dropout.
+      if (d.absences === 0 && d.G3 === 0) return false
+
+      return true
+    })
+    
+    console.log(`Removed ${originalCount - this.data.length} invalid/ghost records.`)
 
     // --- INIT CHARTS ---
+
+    // 1. Parallel Plot
     this.parallelPlot.initChart('.center .top', this.data, (activeFilters) => {
       this.rangeFilters = activeFilters
+      this.selectedStudentId = null
       this.applyAllFilters()
     })
 
-    this.scatterPlot.initChart('.center .down', this.data)
+    // 2. Scatter Plot
+    this.scatterPlot.initChart('.center .down', this.data, (studentId) => {
+      if (this.selectedStudentId === studentId) {
+        this.selectedStudentId = null
+      } else {
+        this.selectedStudentId = studentId
+      }
+      this.applyAllFilters()
+    })
 
-    // PCA Chart
+    // 3. PCA Chart
     const pcaContainer = d3.select('.pca-plot')
     pcaContainer.style('display', 'flex').style('flex-direction', 'column').style('height', '100%')
     const pcaChartDiv = pcaContainer.append('div').attr('class', 'pca-chart-container').style('flex', '1').style('width', '100%').style('position', 'relative')
     const pcaTextDiv = pcaContainer.append('div').attr('class', 'pca-text-container').style('flex-shrink', '0').style('padding', '10px').style('background', '#fafafa').style('border-top', '1px solid #ddd')
 
     pcaTextDiv.html(`
-        <strong>Interpretation (Standardized):</strong><br>
-        <span style="color: #333;">PC1 (21.2%):</span> <em>Academic Performance</em><br>
-        Driven by Grades (0.47) and Failures.<br>
-        <span style="color: #333;">PC2 (13.1%):</span> <em>Social/Alcohol</em><br>
-        Driven by Walc (0.52), Dalc (0.50).
+        <strong>Interpretation:</strong><br>
+        <span style="color: #333;">PC1:</span> Academic Performance (Grades)<br>
+        <span style="color: #333;">PC2:</span> Lifestyle (Alcohol/Going Out)
     `)
 
     this.pcaChart.initChart(pcaChartDiv.node(), this.data)
 
     // Left Panel
     const leftPanel = d3.select('.left')
-    this.updateStats(this.data) // Initial stats
+    this.updateStats(this.data)
 
     // Reset Button
     leftPanel.append('button')
-      .text('↺ Reset All Filters')
+      .text('↺ Reset Filters & Selection')
       .style('width', '100%').style('padding', '8px').style('margin', '10px 0').style('background', '#607d8b').style('color', 'white').style('border', 'none').style('cursor', 'pointer')
       .on('click', () => window.location.reload())
 
@@ -139,6 +165,7 @@ window.app = (new class {
       chart.initChart(div.node(), this.data, attr, label, (attribute, value) => {
         if (this.categoricalFilters[attribute] === value) delete this.categoricalFilters[attribute]
         else this.categoricalFilters[attribute] = value
+        this.selectedStudentId = null
         this.applyAllFilters()
       })
       this.barCharts.push(chart)
@@ -146,7 +173,7 @@ window.app = (new class {
     createBar('internet', 'Internet Access')
     createBar('romantic', 'Romantic Relationship')
 
-    // Box Plots Container
+    // Box Plots
     const boxContainer = leftPanel.append('div').style('display', 'flex').style('justify-content', 'space-between')
     const ageDiv = boxContainer.append('div').style('width', '48%')
     const absDiv = boxContainer.append('div').style('width', '48%')
@@ -161,6 +188,9 @@ window.app = (new class {
 
   applyAllFilters () {
     const filteredData = this.data.filter(d => {
+      if (this.selectedStudentId !== null) {
+        return d.id === this.selectedStudentId
+      }
       for (const [key, range] of Object.entries(this.rangeFilters)) {
         const value = d[key]
         if (value < range[0] || value > range[1]) return false
@@ -176,8 +206,8 @@ window.app = (new class {
     this.pcaChart.updateSelection(filteredData)
     this.barCharts.forEach(chart => chart.updateSelection(filteredData))
     this.histogramPlot.updateSelection(filteredData)
-    this.ageBoxPlot.updateSelection(filteredData) // Update Box
-    this.absBoxPlot.updateSelection(filteredData) // Update Box
+    this.ageBoxPlot.updateSelection(filteredData)
+    this.absBoxPlot.updateSelection(filteredData)
     this.updateStats(filteredData)
   }
 
@@ -192,11 +222,17 @@ window.app = (new class {
 
     const failCount = filteredData.filter(d => d.G3 < 10).length
     const failRate = selectedCount > 0 ? (failCount / selectedCount) * 100 : 0
-    const correlation = calculateCorrelation(filteredData, 'absences', 'G3')
+    
+    // Global Fail Rate
+    const globalFailCount = this.data.filter(d => d.G3 < 10).length
+    const globalFailRate = totalStudents > 0 ? (globalFailCount / totalStudents) * 100 : 0
 
-    const gradeColor = selectedAvgGrade >= globalAvgGrade ? '#2e7d32' : '#c62828'
-    const absenceColor = selectedAvgAbsences <= globalAvgAbsences ? '#2e7d32' : '#c62828'
-    const failColor = failRate > 33 ? '#c62828' : '#2e7d32'
+    const COLOR_GOOD = CONST.COLOR_PRIMARY
+    const COLOR_BAD = '#d6604d'
+
+    const gradeColor = selectedAvgGrade >= globalAvgGrade ? COLOR_GOOD : COLOR_BAD
+    const absenceColor = selectedAvgAbsences <= globalAvgAbsences ? COLOR_GOOD : COLOR_BAD
+    const failColor = failRate > 33 ? COLOR_BAD : COLOR_GOOD
 
     let statsContainer = d3.select('.left .stats-container')
     if (statsContainer.empty()) {
@@ -206,6 +242,7 @@ window.app = (new class {
     const html = `
           <div style="font-family: sans-serif; padding-bottom: 10px; border-bottom: 2px solid #ddd; margin-bottom: 10px;">
             <h3 style="margin-top:0; text-align:center;">Real-time Analytics</h3>
+            ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:4px; margin-bottom:5px; font-size:12px; border:1px solid #fbc02d; border-radius:4px;">User Selected (Click again to reset)</div>' : ''}
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Count</div>
@@ -227,12 +264,7 @@ window.app = (new class {
                 <div style="text-align: center; flex: 1;">
                     <div style="font-size: 12px; color: #555;">Fail Rate</div>
                     <div style="font-weight: bold; font-size: 16px; color: ${failColor};">${failRate.toFixed(1)}%</div>
-                </div>
-            </div>
-            <div style="display: flex; justify-content: center;">
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #555;">Corr(Abs,G3)</div>
-                    <div style="font-weight: bold; font-size: 16px;">${correlation.toFixed(2)}</div>
+                    <div style="font-size: 10px; color: #999;">Global: ${globalFailRate.toFixed(1)}%</div>
                 </div>
             </div>
           </div>

@@ -6,93 +6,146 @@ export default class HistogramPlot {
     this.svg = null
     this.width = 0
     this.height = 0
-    this.margin = { top: 20, right: 10, bottom: 30, left: 30 }
+    this.xScale = null
+    this.yScale = null
+    this.histogram = null
+    this.yAxis = null
+    this.xAxis = null
   }
 
   initChart (selector, data) {
     const container = d3.select(selector)
+    const node = container.node()
+    if (!node) return
 
+    const rect = node.getBoundingClientRect()
+    this.width = rect.width || 400
+    this.height = rect.height || 200
+
+    const { MARGIN } = CONST
+    const innerWidth = this.width - MARGIN.left - MARGIN.right
+    const innerHeight = this.height - MARGIN.top - MARGIN.bottom
+
+    container.selectAll('*').remove()
+
+    // Title
     container.append('h4')
-      .style('margin', '10px 0 5px 0')
-      .style('text-align', 'center')
-      .style('font-size', '12px')
       .text('Grade Distribution (G3)')
-
-    const rect = container.node().getBoundingClientRect()
-    this.width = rect.width || 250
-    this.height = 150
-
-    const innerWidth = this.width - this.margin.left - this.margin.right
-    const innerHeight = this.height - this.margin.top - this.margin.bottom
+      .style('text-align', 'center')
+      .style('margin', '5px 0')
 
     this.svg = container.append('svg')
       .attr('width', this.width)
       .attr('height', this.height)
       .append('g')
-      .attr('transform', `translate(${this.margin.left},${this.margin.top})`)
+      .attr('transform', `translate(${MARGIN.left},${MARGIN.top})`)
 
-    // X Scale (Grades 0-20)
+    // X Scale: Grades 0-20
     this.xScale = d3.scaleLinear()
       .domain([0, 20])
       .range([0, innerWidth])
 
-    // Histogram Binning
-    this.histogram = d3.bin()
+    // Setup Histogram
+    // Check for d3.bin (v6+) or fallback to d3.histogram (v4/v5)
+    const binGenerator = d3.bin ? d3.bin() : d3.histogram()
+
+    this.histogram = binGenerator
       .value(d => d.G3)
       .domain(this.xScale.domain())
-      .thresholds(d3.range(0, 21)) // Bins for every grade 0,1,2...20
+      .thresholds(this.xScale.ticks(20)) // Approx 1 bin per grade
 
     const bins = this.histogram(data)
 
     // Y Scale
     this.yScale = d3.scaleLinear()
+      .domain([0, d3.max(bins, d => d.length) || 10]) // Default max if empty
       .range([innerHeight, 0])
-
-    this.yScale.domain([0, d3.max(bins, d => d.length)])
+      .nice()
 
     // Axes
-    this.svg.append('g')
+    this.xAxis = this.svg.append('g')
       .attr('transform', `translate(0,${innerHeight})`)
-      .call(d3.axisBottom(this.xScale).ticks(5))
+      .call(d3.axisBottom(this.xScale).ticks(10))
 
     this.yAxis = this.svg.append('g')
-      .call(d3.axisLeft(this.yScale).ticks(3))
+      .call(d3.axisLeft(this.yScale).ticks(5))
 
-    // Initial Bars (Background - Total)
-    this.svg.selectAll('.bar-hist-bg')
-      .data(bins)
-      .enter().append('rect')
-      .attr('class', 'bar-hist-bg')
-      .attr('x', 1)
-      .attr('transform', d => `translate(${this.xScale(d.x0)}, ${this.yScale(d.length)})`)
-      .attr('width', d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
-      .attr('height', d => innerHeight - this.yScale(d.length))
-      .style('fill', '#e0e0e0')
+    // Initial Draw
+    this.drawBars(bins, innerHeight)
+  }
 
-    // Foreground Bars (Filtered)
-    this.fgBars = this.svg.selectAll('.bar-hist-fg')
+  drawBars (bins, innerHeight) {
+    // --- 1. Draw Rects ---
+    this.svg.selectAll('rect.bar')
       .data(bins)
-      .enter().append('rect')
-      .attr('class', 'bar-hist-fg')
-      .attr('x', 1)
-      .attr('transform', d => `translate(${this.xScale(d.x0)}, ${this.yScale(d.length)})`)
-      .attr('width', d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
-      .attr('height', d => innerHeight - this.yScale(d.length))
-      .style('fill', CONST.COLOR_PRIMARY)
-      .style('opacity', 0.8)
+      .join(
+        enter => enter.append('rect')
+          .attr('class', 'bar')
+          .attr('x', d => this.xScale(d.x0) + 1)
+          .attr('width', d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
+          .attr('y', innerHeight)
+          .attr('height', 0)
+          .attr('fill', '#90caf9')
+          .call(enter => enter.transition().duration(CONST.TRANSITION_DURATION)
+            .attr('y', d => this.yScale(d.length))
+            .attr('height', d => innerHeight - this.yScale(d.length))
+            .attr('fill', d => {
+              const midPoint = (d.x0 + d.x1) / 2
+              return CONST.COLOR_SCALE(midPoint)
+            })
+          ),
+        update => update.transition().duration(CONST.TRANSITION_DURATION)
+          .attr('x', d => this.xScale(d.x0) + 1)
+          .attr('width', d => Math.max(0, this.xScale(d.x1) - this.xScale(d.x0) - 1))
+          .attr('y', d => this.yScale(d.length))
+          .attr('height', d => innerHeight - this.yScale(d.length))
+          .attr('fill', d => {
+            const midPoint = (d.x0 + d.x1) / 2
+            return CONST.COLOR_SCALE(midPoint)
+          }),
+        exit => exit.transition().duration(200).attr('height', 0).remove()
+      )
+
+    // --- 2. Draw Labels (Student Count) ---
+    this.svg.selectAll('.bar-label')
+      .data(bins)
+      .join(
+        enter => enter.append('text')
+          .attr('class', 'bar-label')
+          .attr('text-anchor', 'middle')
+          .attr('font-size', '11px') // Slightly larger font
+          .attr('font-weight', 'bold')
+          .attr('fill', '#333')
+          .style('pointer-events', 'none')
+          .attr('x', d => this.xScale(d.x0) + (this.xScale(d.x1) - this.xScale(d.x0)) / 2)
+          .attr('y', d => this.yScale(d.length) - 5)
+          .text(d => d.length > 0 ? d.length : '')
+          .attr('opacity', 0)
+          .call(enter => enter.transition().duration(CONST.TRANSITION_DURATION).attr('opacity', 1)),
+        update => update.transition().duration(CONST.TRANSITION_DURATION)
+          .attr('x', d => this.xScale(d.x0) + (this.xScale(d.x1) - this.xScale(d.x0)) / 2)
+          .attr('y', d => this.yScale(d.length) - 5)
+          .text(d => d.length > 0 ? d.length : '')
+          .attr('opacity', 1),
+        exit => exit.remove()
+      )
+      .raise() // Ensure text is always on top of bars
   }
 
   updateSelection (filteredData) {
+    if (!this.histogram || !this.yScale) return
+
     const bins = this.histogram(filteredData)
-    const innerHeight = this.height - this.margin.top - this.margin.bottom
+    const { MARGIN } = CONST
+    const innerHeight = this.height - MARGIN.top - MARGIN.bottom
 
-    // Note: Y scale stays constant to show proportion relative to max!
-    // Or should it zoom? Standard VA practice: keep Y scale fixed to compare with background.
+    // Recalculate Y domain to fit new max (Dynamic scaling)
+    this.yScale.domain([0, d3.max(bins, d => d.length) || 10]).nice()
 
-    this.fgBars
-      .data(bins)
-      .transition().duration(CONST.TRANSITION_DURATION)
-      .attr('transform', d => `translate(${this.xScale(d.x0)}, ${this.yScale(d.length)})`)
-      .attr('height', d => innerHeight - this.yScale(d.length))
+    // Animate Axis Update
+    this.yAxis.transition().duration(CONST.TRANSITION_DURATION)
+      .call(d3.axisLeft(this.yScale).ticks(5))
+
+    this.drawBars(bins, innerHeight)
   }
 }

@@ -1,0 +1,11 @@
+-Check Related Works (visualization for student performance)
+
+-Know why you have used PCA and not other algorithms
+
+-The important part is to FIND GOOD INSIGHTS
+
+-Quality over Quantity when we talk about Visualizations
+
+-What is the Fail Rate?
+
+-Understand the functionalities of every Charts

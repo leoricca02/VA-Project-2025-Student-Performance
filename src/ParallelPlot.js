@@ -18,12 +18,21 @@ export default class ParallelPlot {
   initChart (selector, data, onBrush) {
     this.onBrushCallback = onBrush
     const container = d3.select(selector)
-    const rect = container.node().getBoundingClientRect()
+    const node = container.node()
+
+    if (!node) {
+      console.warn(`ParallelPlot: Selector "${selector}" not found.`)
+      return
+    }
+
+    const rect = node.getBoundingClientRect()
 
     this.width = rect.width || 800
     this.height = rect.height || 400
 
-    const { MARGIN } = CONST
+    // DEFENSIVE CODING: Fallback if CONST.MARGIN is undefined for any reason
+    const MARGIN = CONST.MARGIN || { top: 40, right: 40, bottom: 50, left: 60 }
+
     const innerWidth = this.width - MARGIN.left - MARGIN.right
     const innerHeight = this.height - MARGIN.top - MARGIN.bottom
 
@@ -38,11 +47,17 @@ export default class ParallelPlot {
     // Scales
     this.yScales = {}
     this.dimensions.forEach(dim => {
-      const domain = d3.extent(data, d => d[dim])
-      if (domain[0] === domain[1]) {
+      // Handle cases where data might be missing the key
+      const values = data.map(d => d[dim]).filter(v => v !== undefined && v !== null)
+      let domain = d3.extent(values)
+
+      // If domain is flat (e.g. min == max), extend it slightly
+      if (!domain[0] && domain[0] !== 0) domain = [0, 10] // Default fallback
+      else if (domain[0] === domain[1]) {
         domain[0] -= 1
         domain[1] += 1
       }
+
       this.yScales[dim] = d3.scaleLinear()
         .domain(domain)
         .range([innerHeight, 0])
@@ -53,44 +68,52 @@ export default class ParallelPlot {
       .range([0, innerWidth])
       .padding(0)
 
-    // Lines
+    // Line Generator
     const lineGenerator = d => {
-      return d3.line()(this.dimensions.map(p => [this.xScale(p), this.yScales[p](d[p])]))
+      return d3.line()(this.dimensions.map(p => {
+        // Safety check if dimension data exists
+        if (d[p] === undefined) return [0, 0]
+        return [this.xScale(p), this.yScales[p](d[p])]
+      }))
     }
 
+    // Draw Lines
     this.paths = this.svg.selectAll('path')
       .data(data)
       .enter().append('path')
       .attr('class', 'line')
       .attr('d', lineGenerator)
       .style('fill', 'none')
-      .style('stroke', CONST.COLOR_PRIMARY) // Or use CONST.COLOR_SCALE(d.G3) if passed
+      .style('stroke', CONST.COLOR_PRIMARY)
       .style('opacity', 0.4)
       .style('stroke-width', 1)
 
     // Axes & Brushes
     const yScales = this.yScales
-    const dimensions = this.dimensions
+    // const dimensions = this.dimensions
     const that = this
 
     const axes = this.svg.selectAll('myAxis')
-      .data(dimensions).enter()
+      .data(this.dimensions).enter()
       .append('g')
       .attr('class', 'axis')
       .attr('transform', d => `translate(${this.xScale(d)})`)
 
     axes.each(function (d) {
-      d3.select(this).call(d3.axisLeft(yScales[d]))
+      d3.select(this).call(d3.axisLeft(yScales[d]).ticks(5))
     })
 
+    // Axis Labels
     axes.append('text')
       .style('text-anchor', 'middle')
       .attr('y', -9)
-      .text(d => this.dimLabels[d])
+      .text(d => this.dimLabels[d] || d)
       .style('fill', 'black')
       .style('font-weight', 'bold')
       .style('font-size', '10px')
+      .style('cursor', 'default')
 
+    // Add Brushes
     axes.each(function (d) {
       const axisGroup = d3.select(this)
       const scale = yScales[d]
@@ -125,10 +148,13 @@ export default class ParallelPlot {
   updateSelection (filteredData) {
     const activeIds = new Set(filteredData.map(d => d.id))
 
-    this.paths.style('stroke', d => activeIds.has(d.id) ? CONST.COLOR_PRIMARY : '#ddd')
-      .style('opacity', d => activeIds.has(d.id) ? 0.5 : 0.1)
+    this.paths
+      .transition().duration(200) // Small transition for smoothness
+      .style('stroke', d => activeIds.has(d.id) ? CONST.COLOR_PRIMARY : '#ddd')
+      .style('opacity', d => activeIds.has(d.id) ? 0.6 : 0.05) // Lower opacity for inactive
       .style('stroke-width', d => activeIds.has(d.id) ? 1.5 : 1)
 
+    // Move active lines to front
     this.paths.filter(d => activeIds.has(d.id)).raise()
   }
 }

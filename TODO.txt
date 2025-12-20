@@ -1,3 +1,0 @@
-Cambiare le variabili delle coordinate del Parallel Plot, scegliere qualcosa di più significativo (al posto di cose come Past Failures, per esempio)
-
-Check Related Works
