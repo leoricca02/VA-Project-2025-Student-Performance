@@ -28,12 +28,15 @@ window.app = (new class {
 
     // State for single student selection
     this.selectedStudentId = null
+
+    // Resize debouncer
+    this.resizeTimer = null
   }
 
   run () {
     console.log('1. Starting Application...')
 
-    // --- DATA LOADING ---
+    // --- DATA LOADING & PARSING ---
     let objectsData = []
     if (Array.isArray(rawImport[0])) {
       const headers = rawImport[0]
@@ -98,24 +101,30 @@ window.app = (new class {
       }
     })
 
-    // --- DATA CLEANING & FILTERING ---
+    // --- DATA CLEANING ---
     const originalCount = this.data.length
     this.data = this.data.filter(d => {
-      // 1. Basic Validity
       if (isNaN(d.G3) || !d.school) return false
-
-      // 2. "GHOST" DATA REMOVAL
-      // Remove students with 0 Absences AND 0 Grade.
-      // Rationale: High likelihood of data entry error or dropout.
+      // Remove students with 0 Absences AND 0 Grade (Ghost data)
       if (d.absences === 0 && d.G3 === 0) return false
-
       return true
     })
-
     console.log(`Removed ${originalCount - this.data.length} invalid/ghost records.`)
 
-    // --- INIT CHARTS ---
+    // --- INITIAL DRAW ---
+    this.initAllCharts()
 
+    // --- RESIZE LISTENER ---
+    window.addEventListener('resize', () => {
+      clearTimeout(this.resizeTimer)
+      this.resizeTimer = setTimeout(() => {
+        console.log('Window resized - Redrawing charts...')
+        this.initAllCharts()
+      }, 200) // Debounce delay
+    })
+  }
+
+  initAllCharts () {
     // 1. Parallel Plot
     this.parallelPlot.initChart('.center .top', this.data, (activeFilters) => {
       this.rangeFilters = activeFilters
@@ -133,34 +142,77 @@ window.app = (new class {
       this.applyAllFilters()
     })
 
-    // 3. PCA Chart
+    // 3. PCA Chart & Interface
+    this.initPCAInterface()
+
+    // 4. Left Panel Controls
+    this.initLeftPanel()
+
+    // Re-apply filters to restore state after redraw
+    this.applyAllFilters()
+  }
+
+  initPCAInterface () {
     const pcaContainer = d3.select('.pca-plot')
-    pcaContainer.style('display', 'flex').style('flex-direction', 'column').style('height', '100%')
-    const pcaChartDiv = pcaContainer.append('div').attr('class', 'pca-chart-container').style('flex', '1').style('width', '100%').style('position', 'relative')
-    const pcaTextDiv = pcaContainer.append('div').attr('class', 'pca-text-container').style('flex-shrink', '0').style('padding', '10px').style('background', '#fafafa').style('border-top', '1px solid #ddd')
+    pcaContainer.selectAll('*').remove() // Clear previous
+
+    // 1. Text Container (NOW ON TOP)
+    const pcaTextDiv = pcaContainer.append('div')
+      .attr('class', 'pca-text-container')
+      .style('flex', '0 0 auto') // Don't grow, don't shrink
+      .style('padding-bottom', '1rem')
+      .style('border-bottom', '1px solid #ddd')
+      .style('margin-bottom', '1rem')
+      .style('font-size', '0.8rem') // Responsive font
 
     pcaTextDiv.html(`
-        <strong>Interpretation:</strong><br>
-        <span style="color: #333;">PC1:</span> Academic Performance (Grades)<br> </span> G2 -> 0.467762, G3 -> 0.452654, G1 -> 0.451066, failures -> 0.317766, Medu -> 0.230058 <br>
-        <span style="color: #333;">PC2:</span> Lifestyle (Alcohol/Going Out) <br> </span> Walc -> 0.518704, Dalc -> 0.500410, goout -> 0.374682, freetime -> 0.290236, studytime -> 0.216797 <br>
+        <strong style="font-size: 1rem;">Interpretation:</strong><br>
+        <span style="color: #333; font-weight:bold;">PC1:</span> Academic Performance (Grades)<br> 
+        <span style="color: #666; font-size: 0.75rem;">G2 (0.47), G3 (0.45), G1 (0.45), Failures (0.32)</span> <br>
+        <div style="margin-top:0.5rem"></div>
+        <span style="color: #333; font-weight:bold;">PC2:</span> Lifestyle (Alcohol/Social) <br> 
+        <span style="color: #666; font-size: 0.75rem;">Walc (0.52), Dalc (0.50), GoOut (0.37)</span> <br>
     `)
 
-    this.pcaChart.initChart(pcaChartDiv.node(), this.data)
+    // 2. Chart Container (NOW ON BOTTOM)
+    const pcaChartDiv = pcaContainer.append('div')
+      .attr('class', 'pca-chart-container')
+      .style('flex', '1') // Fill remaining space
+      .style('width', '100%')
+      .style('position', 'relative')
+      .style('min-height', '200px') // Ensure visibility
 
-    // Left Panel
+    this.pcaChart.initChart(pcaChartDiv.node(), this.data)
+  }
+
+  initLeftPanel () {
     const leftPanel = d3.select('.left')
-    this.updateStats(this.data)
+    leftPanel.selectAll('*').remove()
+
+    // Stats Container
+    leftPanel.append('div').attr('class', 'stats-container')
+    this.updateStats(this.data) // Initial stats
 
     // Reset Button
     leftPanel.append('button')
-      .text('↺ Reset Filters & Selection')
-      .style('width', '100%').style('padding', '8px').style('margin', '10px 0').style('background', '#607d8b').style('color', 'white').style('border', 'none').style('cursor', 'pointer')
+      .text('↺ Reset Filters')
+      .style('width', '100%')
+      .style('padding', '0.5rem')
+      .style('margin-bottom', '1rem')
+      .style('background', '#607d8b')
+      .style('color', 'white')
+      .style('border', 'none')
+      .style('border-radius', '4px')
+      .style('cursor', 'pointer')
+      .style('font-size', '0.9rem')
       .on('click', () => window.location.reload())
 
     // Bar Charts
+    this.barCharts = []
     const barContainer = leftPanel.append('div').attr('class', 'bar-charts-container')
+
     const createBar = (attr, label) => {
-      const div = barContainer.append('div').attr('class', 'bar-chart-box')
+      const div = barContainer.append('div').attr('class', 'bar-chart-box').style('margin-bottom', '1rem')
       const chart = new BarChart()
       chart.initChart(div.node(), this.data, attr, label, (attribute, value) => {
         if (this.categoricalFilters[attribute] === value) delete this.categoricalFilters[attribute]
@@ -174,15 +226,15 @@ window.app = (new class {
     createBar('romantic', 'Romantic Relationship')
 
     // Box Plots
-    const boxContainer = leftPanel.append('div').style('display', 'flex').style('justify-content', 'space-between')
+    const boxContainer = leftPanel.append('div').style('display', 'flex').style('justify-content', 'space-between').style('margin-bottom', '1rem')
     const ageDiv = boxContainer.append('div').style('width', '48%')
     const absDiv = boxContainer.append('div').style('width', '48%')
 
-    this.ageBoxPlot.initChart(ageDiv.node(), this.data, 'age', 'Age Distribution')
-    this.absBoxPlot.initChart(absDiv.node(), this.data, 'absences', 'Absences Distribution')
+    this.ageBoxPlot.initChart(ageDiv.node(), this.data, 'age', 'Age Dist.')
+    this.absBoxPlot.initChart(absDiv.node(), this.data, 'absences', 'Absences Dist.')
 
     // Histogram
-    const histDiv = leftPanel.append('div').attr('class', 'histogram-box').style('margin-top', '10px')
+    const histDiv = leftPanel.append('div').attr('class', 'histogram-box')
     this.histogramPlot.initChart(histDiv.node(), this.data)
   }
 
@@ -222,54 +274,45 @@ window.app = (new class {
 
     const failCount = filteredData.filter(d => d.G3 < 10).length
     const failRate = selectedCount > 0 ? (failCount / selectedCount) * 100 : 0
-
-    // Global Fail Rate
-    const globalFailCount = this.data.filter(d => d.G3 < 10).length
-    const globalFailRate = totalStudents > 0 ? (globalFailCount / totalStudents) * 100 : 0
+    const globalFailRate = totalStudents > 0 ? (this.data.filter(d => d.G3 < 10).length / totalStudents) * 100 : 0
 
     const COLOR_GOOD = CONST.COLOR_PRIMARY
     const COLOR_BAD = '#d6604d'
-
     const gradeColor = selectedAvgGrade >= globalAvgGrade ? COLOR_GOOD : COLOR_BAD
-    const absenceColor = selectedAvgAbsences <= globalAvgAbsences ? COLOR_GOOD : COLOR_BAD
     const failColor = failRate > 33 ? COLOR_BAD : COLOR_GOOD
 
-    let statsContainer = d3.select('.left .stats-container')
-    if (statsContainer.empty()) {
-      statsContainer = d3.select('.left').insert('div', ':first-child').attr('class', 'stats-container')
-    }
+    const container = d3.select('.stats-container')
 
     const html = `
-          <div style="font-family: sans-serif; padding-bottom: 10px; border-bottom: 2px solid #ddd; margin-bottom: 10px;">
-            <h3 style="margin-top:0; text-align:center; font-size: 20px;">Real-time Analytics</h3>
-            ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:4px; margin-bottom:5px; font-size:12px; border:1px solid #fbc02d; border-radius:4px;">User Selected (Click again to reset)</div>' : ''}
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 25px; color: #555;">Count</div>
-                    <div style="font-weight: bold; font-size: 25px;">${selectedCount}</div>
-                    <div style="font-size: 20px; color: #999;">/ ${totalStudents}</div>
-                </div>
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 25px; color: #555;">Avg Grade</div>
-                    <div style="font-weight: bold; font-size: 25px; color: ${gradeColor};">${selectedAvgGrade.toFixed(1)}</div>
-                    <div style="font-size: 20px; color: #999;">Global: ${globalAvgGrade.toFixed(1)}</div>
-                </div>
-            </div>
-            <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 25px; color: #555;">Avg Absences</div>
-                    <div style="font-weight: bold; font-size: 25px; color: ${absenceColor};">${selectedAvgAbsences.toFixed(1)}</div>
-                    <div style="font-size: 20px; color: #999;">Global: ${globalAvgAbsences.toFixed(1)}</div>
-                </div>
-                <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 25px; color: #555;">Fail Rate</div>
-                    <div style="font-weight: bold; font-size: 25px; color: ${failColor};">${failRate.toFixed(1)}%</div>
-                    <div style="font-size: 20px; color: #999;">Global: ${globalFailRate.toFixed(1)}%</div>
-                </div>
-            </div>
-          </div>
-      `
-    statsContainer.html(html)
+      <h3>Real-time Analytics</h3>
+      ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:0.3rem; margin-bottom:0.5rem; font-size:0.8rem; border-radius:4px;">Selection Active</div>' : ''}
+      
+      <div class="stat-row">
+         <div class="stat-box">
+            <div class="label">Count</div>
+            <div class="value">${selectedCount}</div>
+            <div class="sub">/ ${totalStudents}</div>
+         </div>
+         <div class="stat-box">
+            <div class="label">Avg Grade</div>
+            <div class="value" style="color: ${gradeColor};">${selectedAvgGrade.toFixed(1)}</div>
+            <div class="sub">Global: ${globalAvgGrade.toFixed(1)}</div>
+         </div>
+      </div>
+      <div class="stat-row">
+         <div class="stat-box">
+            <div class="label">Avg Abs.</div>
+            <div class="value">${selectedAvgAbsences.toFixed(1)}</div>
+            <div class="sub">Global: ${globalAvgAbsences.toFixed(1)}</div>
+         </div>
+         <div class="stat-box">
+            <div class="label">Fail Rate</div>
+            <div class="value" style="color: ${failColor};">${failRate.toFixed(1)}%</div>
+            <div class="sub">Global: ${globalFailRate.toFixed(1)}%</div>
+         </div>
+      </div>
+    `
+    container.html(html)
   }
 }())
 
