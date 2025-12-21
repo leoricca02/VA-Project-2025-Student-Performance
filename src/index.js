@@ -111,7 +111,7 @@ window.app = (new class {
 
       return true
     })
-    
+
     console.log(`Removed ${originalCount - this.data.length} invalid/ghost records.`)
 
     // --- INIT CHARTS ---
@@ -141,8 +141,8 @@ window.app = (new class {
 
     pcaTextDiv.html(`
         <strong>Interpretation:</strong><br>
-        <span style="color: #333;">PC1:</span> Academic Performance (Grades)<br>
-        <span style="color: #333;">PC2:</span> Lifestyle (Alcohol/Going Out)
+        <span style="color: #333;">PC1:</span> Academic Performance (Grades)<br> </span> G2 -> 0.467762, G3 -> 0.452654, G1 -> 0.451066, failures -> 0.317766, Medu -> 0.230058 <br>
+        <span style="color: #333;">PC2:</span> Lifestyle (Alcohol/Going Out) <br> </span> Walc -> 0.518704, Dalc -> 0.500410, goout -> 0.374682, freetime -> 0.290236, studytime -> 0.216797 <br>
     `)
 
     this.pcaChart.initChart(pcaChartDiv.node(), this.data)
@@ -222,7 +222,7 @@ window.app = (new class {
 
     const failCount = filteredData.filter(d => d.G3 < 10).length
     const failRate = selectedCount > 0 ? (failCount / selectedCount) * 100 : 0
-    
+
     // Global Fail Rate
     const globalFailCount = this.data.filter(d => d.G3 < 10).length
     const globalFailRate = totalStudents > 0 ? (globalFailCount / totalStudents) * 100 : 0

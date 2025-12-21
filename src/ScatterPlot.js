@@ -77,7 +77,7 @@ export default class ScatterPlot {
       .attr('y', innerHeight + 40)
       .style('text-anchor', 'middle')
       .style('font-size', '14px')
-      .text('Number of Absences (with Jitter)')
+      .text('Number of Absences')
 
     this.svg.append('g')
       .call(d3.axisLeft(this.yScale))
