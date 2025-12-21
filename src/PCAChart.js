@@ -11,7 +11,7 @@ export default class PCAChart {
     this.pcaData = [] // Cache calculated data
   }
 
-  initChart (selector, data) {
+  initChart (selector, data, onSelection) {
     const container = d3.select(selector)
     container.selectAll('*').remove()
 
@@ -114,7 +114,7 @@ export default class PCAChart {
 
     yAxis.selectAll('text').style('font-size', `${axisLabelSize * 0.8}px`)
 
-    // --- ADDED AXIS LABELS ---
+    // Axis Labels
     this.svg.append('text')
       .attr('x', innerWidth / 2)
       .attr('y', innerHeight + margin.bottom - 5)
@@ -132,7 +132,38 @@ export default class PCAChart {
       .style('font-weight', 'bold')
       .text('PC2')
 
-    // Draw Points
+    // --- BRUSH IMPLEMENTATION (Added BEFORE circles to allow dragging on background) ---
+    const brush = d3.brush()
+      .extent([[0, 0], [innerWidth, innerHeight]])
+      .on('start brush end', (event) => {
+        // If the selection is null (user clicked outside to clear), or programmatic clear
+        if (!event.selection) {
+          if (event.type === 'end' && event.sourceEvent) {
+            onSelection(null)
+          }
+          return
+        }
+
+        // Calculate points inside the brush
+        const [[x0, y0], [x1, y1]] = event.selection
+
+        const selectedPoints = this.pcaData.filter(d => {
+          const cx = this.xScale(d.x)
+          const cy = this.yScale(d.y)
+          return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1
+        })
+
+        const selectedIds = selectedPoints.map(d => d.id)
+
+        // Pass to parent
+        onSelection(selectedIds)
+      })
+
+    this.svg.append('g')
+      .attr('class', 'brush')
+      .call(brush)
+
+    // Draw Points (AFTER brush so they are on top for mouseover)
     const radius = Math.max(2.5, minDim * 0.015)
 
     this.svg.selectAll('circle')
@@ -146,6 +177,7 @@ export default class PCAChart {
       .attr('opacity', 0.8)
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
+      .style('pointer-events', 'all') // Ensure tooltips work
       .on('mouseover', (event, d) => {
         this.tooltip.transition().duration(200).style('opacity', 1)
         this.tooltip.html(`ID: ${d.id}<br>Grade: ${d.G3}`)

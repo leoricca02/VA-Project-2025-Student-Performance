@@ -26,6 +26,9 @@ window.app = (new class {
     this.categoricalFilters = {}
     this.rangeFilters = {}
 
+    // Store IDs selected via PCA Brushing
+    this.pcaFilteredIds = null
+
     // State for single student selection
     this.selectedStudentId = null
 
@@ -156,7 +159,7 @@ window.app = (new class {
     const pcaContainer = d3.select('.pca-plot')
     pcaContainer.selectAll('*').remove() // Clear previous
 
-    // 1. Text Container (NOW ON TOP)
+    // 1. Text Container
     const pcaTextDiv = pcaContainer.append('div')
       .attr('class', 'pca-text-container')
       .style('flex', '0 0 auto') // Don't grow, don't shrink
@@ -174,7 +177,7 @@ window.app = (new class {
         <span style="color: #666; font-size: 0.75rem;">Walc (0.52), Dalc (0.50), GoOut (0.37)</span> <br>
     `)
 
-    // 2. Chart Container (NOW ON BOTTOM)
+    // 2. Chart Container
     const pcaChartDiv = pcaContainer.append('div')
       .attr('class', 'pca-chart-container')
       .style('flex', '1') // Fill remaining space
@@ -182,7 +185,12 @@ window.app = (new class {
       .style('position', 'relative')
       .style('min-height', '200px') // Ensure visibility
 
-    this.pcaChart.initChart(pcaChartDiv.node(), this.data)
+    // Passed callback to handle brush selection (KEPT THIS FEATURE)
+    this.pcaChart.initChart(pcaChartDiv.node(), this.data, (selectedIds) => {
+      this.pcaFilteredIds = selectedIds ? new Set(selectedIds) : null
+      this.selectedStudentId = null // Clear single selection to avoid confusion
+      this.applyAllFilters()
+    })
   }
 
   initLeftPanel () {
@@ -240,13 +248,23 @@ window.app = (new class {
 
   applyAllFilters () {
     const filteredData = this.data.filter(d => {
+      // 1. Check PCA Brush Selection (KEPT THIS FEATURE)
+      if (this.pcaFilteredIds !== null) {
+        if (!this.pcaFilteredIds.has(d.id)) return false
+      }
+
+      // 2. Existing Single Selection
       if (this.selectedStudentId !== null) {
         return d.id === this.selectedStudentId
       }
+
+      // 3. Range Filters
       for (const [key, range] of Object.entries(this.rangeFilters)) {
         const value = d[key]
         if (value < range[0] || value > range[1]) return false
       }
+
+      // 4. Categorical Filters
       for (const [key, value] of Object.entries(this.categoricalFilters)) {
         if (d[key] !== value) return false
       }
@@ -283,6 +301,7 @@ window.app = (new class {
 
     const container = d3.select('.stats-container')
 
+    // RESTORED ORIGINAL LAYOUT (No Correlation Box)
     const html = `
       <h3>Real-time Analytics</h3>
       ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:0.3rem; margin-bottom:0.5rem; font-size:0.8rem; border-radius:4px;">Selection Active</div>' : ''}
