@@ -20,7 +20,7 @@ export default class BarChart {
     container.append('h4')
       .style('margin', '10px 0 5px 0')
       .style('text-align', 'center')
-      .style('font-size', '16px')
+      .style('font-size', '20px')
       .text(label)
 
     const rect = container.node().getBoundingClientRect()
@@ -116,7 +116,7 @@ export default class BarChart {
       .attr('x', d => this.xScale(d[0]) + this.xScale.bandwidth() / 2)
       .attr('y', d => this.yScale(d[1]) - 5) // Initially above the total bar
       .attr('text-anchor', 'middle')
-      .style('font-size', '10px')
+      .style('font-size', '16px')
       .style('fill', '#333')
       .style('font-weight', 'bold')
       .text(d => d[1]) // Initially show total

@@ -100,13 +100,13 @@ export default class ScatterPlot {
     legend.append('text')
       .text('Grade Color:')
       .style('font-weight', 'bold')
-      .style('font-size', '14px')
+      .style('font-size', '18px')
 
     legend.append('circle').attr('cx', 0).attr('cy', 20).attr('r', 6).attr('fill', CONST.COLOR_SCALE(5))
-    legend.append('text').attr('x', 15).attr('y', 25).text('Fail (<10)').style('font-size', '12px')
+    legend.append('text').attr('x', 15).attr('y', 25).text('Fail (<10)').style('font-size', '20px')
 
     legend.append('circle').attr('cx', 0).attr('cy', 40).attr('r', 6).attr('fill', CONST.COLOR_SCALE(15))
-    legend.append('text').attr('x', 15).attr('y', 45).text('Pass (>=10)').style('font-size', '12px')
+    legend.append('text').attr('x', 15).attr('y', 45).text('Pass (>=10)').style('font-size', '20px')
 
     // Instruction Hint
     this.svg.append('text')
