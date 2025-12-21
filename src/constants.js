@@ -1,7 +1,7 @@
 import * as d3 from 'd3'
 
 export default {
-  // VISUAL ANALYTICS STANDARD: Use Blue/Orange or Purple/Green for accessibility.
+  // VISUAL ANALYTICS STANDARD: Color Palette
   COLOR_PRIMARY: '#2196f3', // Blue primary
   COLOR_BG: '#ffffff',
 
@@ -25,8 +25,8 @@ export default {
     goout: 'Going Out (1-5)',
     Dalc: 'Workday Alc. (1-5)',
     Walc: 'Weekend Alc. (1-5)',
-    absences: 'Absences (n)',
-    G3: 'Final Grade (0-20)'
+    absences: 'Absences',
+    G3: 'Final Grade'
   },
 
   // Formatters

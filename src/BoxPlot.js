@@ -17,7 +17,7 @@ export default class BoxPlot {
     container.append('h4')
       .style('margin', '10px 0 5px 0')
       .style('text-align', 'center')
-      .style('font-size', '12px')
+      .style('font-size', '20px')
       .text(label)
 
     const rect = container.node().getBoundingClientRect()

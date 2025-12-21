@@ -33,6 +33,7 @@ export default class HistogramPlot {
       .text('Grade Distribution (G3)')
       .style('text-align', 'center')
       .style('margin', '5px 0')
+      .style('font-size', '20px')
 
     this.svg = container.append('svg')
       .attr('width', this.width)

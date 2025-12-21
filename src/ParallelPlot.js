@@ -110,7 +110,7 @@ export default class ParallelPlot {
       .text(d => this.dimLabels[d] || d)
       .style('fill', 'black')
       .style('font-weight', 'bold')
-      .style('font-size', '10px')
+      .style('font-size', '16px')
       .style('cursor', 'default')
 
     // Add Brushes

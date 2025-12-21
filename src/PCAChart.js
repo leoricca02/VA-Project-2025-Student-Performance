@@ -24,7 +24,7 @@ export default class PCAChart {
 
     container.append('h3')
       .style('text-align', 'center')
-      .style('font-size', '14px')
+      .style('font-size', '20px')
       .style('margin', '5px 0')
       .text('PCA Projection (colored by Grade)')
 
@@ -102,7 +102,7 @@ export default class PCAChart {
       .attr('x', innerWidth / 2)
       .attr('y', innerHeight + 35)
       .style('text-anchor', 'middle')
-      .style('font-size', '10px')
+      .style('font-size', '18px')
       .text('PC 1 (Standardized)')
 
     this.svg.append('g')
@@ -113,7 +113,7 @@ export default class PCAChart {
       .attr('x', -innerHeight / 2)
       .attr('y', -35)
       .style('text-anchor', 'middle')
-      .style('font-size', '10px')
+      .style('font-size', '18px')
       .text('PC 2 (Standardized)')
 
     // --- 6. DRAW POINTS ---

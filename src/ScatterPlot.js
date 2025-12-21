@@ -29,8 +29,8 @@ export default class ScatterPlot {
     container.append('h3')
       .style('text-align', 'center')
       .style('margin', '5px 0')
-      .style('font-size', '18px')
-      .text('Performance Analysis: Grades vs. Absences (Jittered)')
+      .style('font-size', '20px')
+      .text('Performance Analysis: Grades vs. Absences')
 
     this.svg = container.append('svg')
       .attr('width', this.width)
@@ -113,7 +113,7 @@ export default class ScatterPlot {
       .attr('x', 10)
       .attr('y', -10)
       .text('💡 Click a point to select student')
-      .style('font-size', '12px')
+      .style('font-size', '20px')
       .style('fill', '#666')
 
     // Tooltip

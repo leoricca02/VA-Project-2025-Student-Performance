@@ -241,30 +241,30 @@ window.app = (new class {
 
     const html = `
           <div style="font-family: sans-serif; padding-bottom: 10px; border-bottom: 2px solid #ddd; margin-bottom: 10px;">
-            <h3 style="margin-top:0; text-align:center;">Real-time Analytics</h3>
+            <h3 style="margin-top:0; text-align:center; font-size: 20px;">Real-time Analytics</h3>
             ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:4px; margin-bottom:5px; font-size:12px; border:1px solid #fbc02d; border-radius:4px;">User Selected (Click again to reset)</div>' : ''}
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #555;">Count</div>
-                    <div style="font-weight: bold; font-size: 16px;">${selectedCount}</div>
-                    <div style="font-size: 10px; color: #999;">/ ${totalStudents}</div>
+                    <div style="font-size: 25px; color: #555;">Count</div>
+                    <div style="font-weight: bold; font-size: 25px;">${selectedCount}</div>
+                    <div style="font-size: 20px; color: #999;">/ ${totalStudents}</div>
                 </div>
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #555;">Avg Grade</div>
-                    <div style="font-weight: bold; font-size: 16px; color: ${gradeColor};">${selectedAvgGrade.toFixed(1)}</div>
-                    <div style="font-size: 10px; color: #999;">Global: ${globalAvgGrade.toFixed(1)}</div>
+                    <div style="font-size: 25px; color: #555;">Avg Grade</div>
+                    <div style="font-weight: bold; font-size: 25px; color: ${gradeColor};">${selectedAvgGrade.toFixed(1)}</div>
+                    <div style="font-size: 20px; color: #999;">Global: ${globalAvgGrade.toFixed(1)}</div>
                 </div>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #555;">Avg Absences</div>
-                    <div style="font-weight: bold; font-size: 16px; color: ${absenceColor};">${selectedAvgAbsences.toFixed(1)}</div>
-                    <div style="font-size: 10px; color: #999;">Global: ${globalAvgAbsences.toFixed(1)}</div>
+                    <div style="font-size: 25px; color: #555;">Avg Absences</div>
+                    <div style="font-weight: bold; font-size: 25px; color: ${absenceColor};">${selectedAvgAbsences.toFixed(1)}</div>
+                    <div style="font-size: 20px; color: #999;">Global: ${globalAvgAbsences.toFixed(1)}</div>
                 </div>
                 <div style="text-align: center; flex: 1;">
-                    <div style="font-size: 12px; color: #555;">Fail Rate</div>
-                    <div style="font-weight: bold; font-size: 16px; color: ${failColor};">${failRate.toFixed(1)}%</div>
-                    <div style="font-size: 10px; color: #999;">Global: ${globalFailRate.toFixed(1)}%</div>
+                    <div style="font-size: 25px; color: #555;">Fail Rate</div>
+                    <div style="font-weight: bold; font-size: 25px; color: ${failColor};">${failRate.toFixed(1)}%</div>
+                    <div style="font-size: 20px; color: #999;">Global: ${globalFailRate.toFixed(1)}%</div>
                 </div>
             </div>
           </div>
