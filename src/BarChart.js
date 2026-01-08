@@ -108,7 +108,7 @@ export default class BarChart {
       .attr('fill', CONST.COLOR_PRIMARY)
       .style('pointer-events', 'none') // Allow clicks to pass through
 
-    // Labels (New Feature)
+    // Labels
     this.labels = this.svg.selectAll('.bar-label')
       .data(this.counts)
       .enter().append('text')

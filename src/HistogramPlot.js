@@ -114,7 +114,7 @@ export default class HistogramPlot {
         enter => enter.append('text')
           .attr('class', 'bar-label')
           .attr('text-anchor', 'middle')
-          .attr('font-size', '16px') // Slightly larger font
+          .attr('font-size', '12px') // Slightly larger font
           .attr('font-weight', 'bold')
           .attr('fill', '#333')
           .style('pointer-events', 'none')

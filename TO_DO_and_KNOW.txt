@@ -1,6 +1,4 @@
--Check Related Works (visualization for student performance)
-
--Know why you have used PCA and not other algorithms
+-Know why you have used PCA and no other algorithms
 
 -The important part is to FIND GOOD INSIGHTS
 
