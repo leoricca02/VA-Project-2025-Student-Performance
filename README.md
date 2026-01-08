@@ -90,19 +90,19 @@ The project uses the **Student Performance Data Set (Math course)** from the **U
    ```
    
 2. **Install dependencies**
-```bash
-npm install
-```
+  ```bash
+  npm install
+  ```
 
 3. **Start the development server**
-```bash
-npm run start
-```
+  ```bash
+  npm run start
+  ```
 
 4. **Open the application in your browser**
-```bash
-http://localhost:9000
-```
+  ```bash
+  http://localhost:9000  
+  ```
 
 🛠 **Technologies**
 - D3.js (v7) — Data visualization and DOM manipulation
@@ -112,6 +112,7 @@ http://localhost:9000
 
 
 👨‍💻 **Authors**
+
 Leonardo Ricca — ID: 2211129
 
 Federico Turrini — ID: 2175431
