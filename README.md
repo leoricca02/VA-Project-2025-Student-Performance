@@ -28,8 +28,8 @@ The dashboard implements:
   - Study Time
   - Alcohol Consumption
   - Health
- 
- Supports **range filtering (brushing)** on individual axes.
+  
+  Supports **range filtering (brushing)** on individual axes.
 
 - **Scatter Plot (Performance vs. Study Time)**  
   Displays the relationship between:
