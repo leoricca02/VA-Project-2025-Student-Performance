@@ -27,13 +27,15 @@ The dashboard implements:
   - Age
   - Study Time
   - Alcohol Consumption
-  - Health  
-  Supports **range filtering (brushing)** on individual axes.
+  - Health
+ 
+ Supports **range filtering (brushing)** on individual axes.
 
 - **Scatter Plot (Performance vs. Study Time)**  
   Displays the relationship between:
   - Final Grade (G3)
-  - Weekly Study Time  
+  - Weekly Study Time
+  
   Quickly highlights **outliers**, such as students with high absences but passing grades.
 
 - **PCA Projection (Cluster Analysis)**  
@@ -57,7 +59,8 @@ The dashboard implements:
 - **On-Demand Analytics Panel**  
   Displays real-time statistical comparisons between:
   - Selected student subset
-  - Global dataset  
+  - Global dataset
+  
   Metrics include **average final grade** and **average absences**.
 
 ---
