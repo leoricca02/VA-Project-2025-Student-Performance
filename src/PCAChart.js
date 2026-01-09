@@ -1,5 +1,5 @@
 import * as d3 from 'd3'
-import PCA from 'pca-js'
+import PCA from 'pca-js' // The library performing the Linear Algebra
 import CONST from './constants'
 
 export default class PCAChart {
@@ -15,7 +15,7 @@ export default class PCAChart {
     const container = d3.select(selector)
     container.selectAll('*').remove()
 
-    // 1. DYNAMIC SIZING
+    // 1. DYNAMIC SIZING (Responsive Design)
     const rect = container.node().getBoundingClientRect()
     this.width = rect.width
     this.height = rect.height
@@ -64,13 +64,20 @@ export default class PCAChart {
       .style('font-size', '12px')
       .style('z-index', 9999)
 
-    // --- PCA CALCULATION ---
+    // =========================================================
+    //               PCA ALGORITHM EXPLANATION
+    // =========================================================
+
+    // STEP 1: FEATURE SELECTION
     const numericKeys = ['age', 'Medu', 'Fedu', 'traveltime', 'studytime', 'failures',
       'famrel', 'freetime', 'goout', 'Dalc', 'Walc', 'health', 'absences', 'G1', 'G2', 'G3']
 
+    console.group('PCA PROCESS EXPLANATION')
+    console.log('1. Features Selected:', numericKeys)
+
     const rawVectors = data.map(d => numericKeys.map(key => d[key]))
 
-    // Standardization
+    // STEP 2: STANDARDIZATION
     const m = rawVectors[0].length
     const stats = Array.from({ length: m }, (_, colIndex) => {
       const column = rawVectors.map(row => row[colIndex])
@@ -79,11 +86,60 @@ export default class PCAChart {
       return { mean, deviation }
     })
 
+    console.log('2. Standardization Stats (Mean & Deviation per variable):')
+    console.table(stats.map((s, i) => ({ Variable: numericKeys[i], Mean: s.mean.toFixed(2), StdDev: s.deviation.toFixed(2) })))
+
     const standardizedVectors = rawVectors.map(row =>
       row.map((val, colIndex) => (val - stats[colIndex].mean) / stats[colIndex].deviation)
     )
 
+    console.log('   Example Student (ID 0) Raw:', rawVectors[0])
+    console.log('   Example Student (ID 0) Standardized:', standardizedVectors[0])
+
+    // STEP 3: EIGENDECOMPOSITION
     const vectors = PCA.getEigenVectors(standardizedVectors)
+
+    console.log('3. Eigenvectors (The "Loadings"):')
+    console.log('   Raw PC1 Object:', vectors[0])
+    console.log('   Raw PC2 Object:', vectors[1])
+
+    // --- AUTOMATIC INTERPRETATION SCRIPT ---
+    // This part extracts the weights and sorts them to tell you WHAT the axis means.
+    const analyzeComponent = (vectorObj, name) => {
+      const weights = vectorObj.eigenvector || vectorObj.vector || vectorObj
+
+      if (!Array.isArray(weights) || weights.length !== numericKeys.length) {
+        console.warn(`   ⚠️ Could not interpret ${name} automatically. Check structure.`, weights)
+        return
+      }
+
+      // Map weights to variable names
+      const contributions = weights.map((w, i) => ({
+        variable: numericKeys[i],
+        weight: w,
+        absWeight: Math.abs(w)
+      }))
+
+      // Sort by absolute influence (highest first)
+      contributions.sort((a, b) => b.absWeight - a.absWeight)
+
+      console.log(`   🔎 INTERPRETATION of ${name}:`)
+      console.log('      Top 5 Contributors (Variables that drive this axis):')
+      console.table(contributions.slice(0, 5).map(c => ({
+        Variable: c.variable,
+        Influence: c.weight.toFixed(3) // Positive/Negative matters
+      })))
+    }
+
+    try {
+      analyzeComponent(vectors[0], 'PC1 (X-Axis)')
+      analyzeComponent(vectors[1], 'PC2 (Y-Axis)')
+    } catch (e) {
+      console.error('Error in auto-interpretation:', e)
+    }
+    // ---------------------------------------
+
+    // STEP 4: PROJECTION
     const adData = PCA.computeAdjustedData(standardizedVectors, vectors[0], vectors[1])
 
     this.pcaData = adData.formattedAdjustedData[0].map((val, i) => ({
@@ -92,6 +148,12 @@ export default class PCAChart {
       y: adData.formattedAdjustedData[1][i],
       G3: data[i].G3
     }))
+
+    console.groupEnd()
+
+    // =========================================================
+    //                 VISUALIZATION (D3.js)
+    // =========================================================
 
     // Scales
     this.xScale = d3.scaleLinear()
@@ -132,30 +194,23 @@ export default class PCAChart {
       .style('font-weight', 'bold')
       .text('PC2')
 
-    // --- BRUSH IMPLEMENTATION (Added BEFORE circles to allow dragging on background) ---
+    // --- BRUSH IMPLEMENTATION ---
     const brush = d3.brush()
       .extent([[0, 0], [innerWidth, innerHeight]])
       .on('start brush end', (event) => {
-        // If the selection is null (user clicked outside to clear), or programmatic clear
         if (!event.selection) {
           if (event.type === 'end' && event.sourceEvent) {
             onSelection(null)
           }
           return
         }
-
-        // Calculate points inside the brush
         const [[x0, y0], [x1, y1]] = event.selection
-
         const selectedPoints = this.pcaData.filter(d => {
           const cx = this.xScale(d.x)
           const cy = this.yScale(d.y)
           return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1
         })
-
         const selectedIds = selectedPoints.map(d => d.id)
-
-        // Pass to parent
         onSelection(selectedIds)
       })
 
@@ -163,7 +218,7 @@ export default class PCAChart {
       .attr('class', 'brush')
       .call(brush)
 
-    // Draw Points (AFTER brush so they are on top for mouseover)
+    // Draw Points
     const radius = Math.max(2.5, minDim * 0.015)
 
     this.svg.selectAll('circle')
@@ -177,7 +232,7 @@ export default class PCAChart {
       .attr('opacity', 0.8)
       .attr('stroke', '#333')
       .attr('stroke-width', 0.5)
-      .style('pointer-events', 'all') // Ensure tooltips work
+      .style('pointer-events', 'all')
       .on('mouseover', (event, d) => {
         this.tooltip.transition().duration(200).style('opacity', 1)
         this.tooltip.html(`ID: ${d.id}<br>Grade: ${d.G3}`)
