@@ -301,7 +301,6 @@ window.app = (new class {
 
     const container = d3.select('.stats-container')
 
-    // RESTORED ORIGINAL LAYOUT (No Correlation Box)
     const html = `
       <h3>Real-time Analytics</h3>
       ${this.selectedStudentId !== null ? '<div style="text-align:center; background:#fff9c4; padding:0.3rem; margin-bottom:0.5rem; font-size:0.8rem; border-radius:4px;">Selection Active</div>' : ''}
